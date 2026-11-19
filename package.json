@@ -1,0 +1,13 @@
+{
+  "name": "tepicas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --no-warnings test/server.mjs",
+    "test": "node --no-warnings --test test/api.test.mjs",
+    "test:e2e": "node --no-warnings test/e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

@@ -1,0 +1,10 @@
+name = "tepicas"
+pages_build_output_dir = "public"
+compatibility_date = "2026-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tepicas"
+database_id = "PEGA_AQUI_EL_ID_DE_D1"
+
+# ADMIN_TOKEN se configura como secreto en Cloudflare (no aquí).

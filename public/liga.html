@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Liga · Tepicas</title>
+<meta name="description" content="¿Quién tiene mejores reflejos? Reto diario de 30 segundos. Sin registro.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0d0e12">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Liga en Tepicas">
+<meta property="og:description" content="¿Quién tiene mejores reflejos? Reto diario de 30 segundos. Sin registro.">
+<meta property="og:url" content="https://tepicas.com/">
+<meta property="og:image" content="https://tepicas.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="module" src="/app.js"></script>
+</head>
+<body data-page="liga">
+<header class="top"><a href="/" class="logo">tepicas<span>.</span></a><span class="day js-day"></span></header>
+<main>
+  <section class="card" id="lg-head">
+    <p class="eyebrow">Liga · <span id="lg-code"></span></p>
+    <h1 id="lg-name">Cargando…</h1>
+    <p class="sub" id="lg-count"></p>
+    <a class="btn primary big hidden" id="lg-play" href="/reflejos">Jugar el reto de hoy</a>
+  </section>
+
+  <section class="card hidden" id="lg-join">
+    <h2>Únete a la liga</h2>
+    <p class="sub">Sin registro. Solo un apodo.</p>
+    <form id="join-form" class="form" novalidate>
+      <label>Tu apodo<input name="nickname" maxlength="16" required placeholder="Tu apodo" autocomplete="off"></label>
+      <p class="err" id="join-err" role="alert"></p>
+      <button class="btn primary">Unirme</button>
+    </form>
+  </section>
+
+  <section class="card hidden" id="lg-invite">
+    <h2 id="invite-title">Invita al grupo</h2>
+    <p class="sub" id="invite-sub">Cuantos más seáis, más pica.</p>
+    <p class="invite-url" id="invite-url"></p>
+    <button class="btn wa" id="invite-btn">Enviar invitación por WhatsApp</button>
+    <button class="btn ghost" id="copy-btn">Copiar enlace</button>
+  </section>
+
+  <section class="card hidden" id="lg-rank">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="day">Hoy</button>
+      <button role="tab" aria-selected="false" data-tab="week">Semana</button>
+    </div>
+    <div id="tab-day"><ol class="rank" id="rank-day"></ol><p class="pending" id="pending"></p></div>
+    <div id="tab-week" class="hidden">
+      <ol class="rank" id="rank-week"></ol>
+      <p class="hint">Cada día: 1.º 10 pts, 2.º 8, 3.º 6, 4.º 5, 5.º 4, 6.º 3, 7.º 2 y 1 por jugar. Se reinicia el lunes.</p>
+    </div>
+  </section>
+
+  <section class="card hidden" id="lg-404">
+    <h2>Esta liga no existe</h2>
+    <p class="sub">Revisa el enlace o crea una nueva.</p>
+    <a class="btn primary" href="/#crear">Crear liga</a>
+  </section>
+</main>
+<footer><a href="/privacidad">Privacidad</a> · Solo mayores de 14 años · © 2026 Tepicas</footer>
+</body>
+</html>

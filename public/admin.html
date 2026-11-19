@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · Tepicas</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/admin.js"></script>
+</head>
+<body class="admin">
+<header class="top"><span class="logo">tepicas<span>.</span> panel</span><span class="day" id="a-day"></span></header>
+<main>
+  <section class="card" id="login">
+    <h2>Acceso</h2>
+    <form id="login-form" class="form">
+      <label>Token de administración<input name="token" type="password" required autocomplete="current-password"></label>
+      <p class="err" id="login-err" role="alert"></p>
+      <button class="btn primary">Entrar</button>
+    </form>
+  </section>
+
+  <div id="panel" class="hidden">
+    <section class="card">
+      <h2>Puerta de la fase 1</h2>
+      <p class="sub">Objetivos: ≥25 % vuelve al día 2 · ≥40 % de ligas con 5+ · ≥10 % comparte.</p>
+      <div class="kpis" id="gate"></div>
+    </section>
+    <section class="card"><h2>Totales</h2><div class="kpis" id="totals"></div></section>
+    <section class="card"><h2>Tamaño de las ligas</h2><div class="bars" id="sizes"></div></section>
+    <section class="card"><h2>Vuelta al día 2 por cohorte</h2><div class="tbl-wrap" id="cohorts"></div></section>
+    <section class="card"><h2>Por día</h2><div class="tbl-wrap" id="daily"></div></section>
+    <section class="card"><h2>Ligas</h2><div class="tbl-wrap" id="leagues"></div></section>
+    <section class="card">
+      <h2>Exportar CSV</h2>
+      <div class="csv">
+        <button class="btn" data-csv="daily">Diario</button>
+        <button class="btn" data-csv="cohorts">Cohortes</button>
+        <button class="btn" data-csv="leagues">Ligas</button>
+        <button class="btn" data-csv="plays">Partidas</button>
+        <button class="btn" data-csv="events">Eventos</button>
+        <button class="btn ghost" id="logout">Salir</button>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
