@@ -56,6 +56,12 @@ function verdict(ms) {
   if (ms < 350) return 'Normalito. Mañana más.';
   return '¿Recién levantado?';
 }
+function globalLine(gl) {
+  if (!gl || !gl.players) return '';
+  if (gl.players === 1) return 'Eres el primero en jugar hoy. Reta a alguien.';
+  const best = gl.best != null ? ` · Récord de hoy: ${gl.best} ms` : '';
+  return gl.beat != null ? `Más rápido que el ${gl.beat} % de los ${gl.players} jugadores de hoy${best}` : `${gl.players} jugadores hoy${best}`;
+}
 const leagueUrl = (code) => `${location.origin}/l/${code}`;
 const isTouch = matchMedia('(pointer: coarse)').matches;
 
@@ -85,7 +91,7 @@ function ageGate() {
 }
 
 // ---------- tarjeta de resultado (imagen para compartir) ----------
-function drawCard({ avg, attempts, discarded, day, league, inviteUrl }) {
+function drawCard({ avg, attempts, discarded, day, league, inviteUrl, gl }) {
   const W = 1080, H = 1350;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -117,10 +123,9 @@ function drawCard({ avg, attempts, discarded, day, league, inviteUrl }) {
     g.beginPath(); g.roundRect(80, y, bw, 44, 10); g.fill();
     g.fillStyle = '#c9ccd3'; g.font = `700 34px ${F}`; g.fillText(discarded.includes(i) ? `${ms} ms ✕` : `${ms} ms`, 100 + bw, y + 34);
   });
-  if (league?.pos) {
-    g.fillStyle = '#f3f4f6'; g.font = `800 52px ${F}`;
-    g.fillText(`${ord(league.pos)} de ${league.played} en ${league.name}`.slice(0, 40), 80, 1150);
-  }
+  const foot = league?.pos ? `${ord(league.pos)} de ${league.played} en ${league.name}`.slice(0, 40)
+    : gl?.beat != null && gl.players >= 10 ? `Más rápido que el ${gl.beat} % de hoy` : '';
+  if (foot) { g.fillStyle = '#f3f4f6'; g.font = `800 52px ${F}`; g.fillText(foot, 80, 1150); }
   g.fillStyle = '#d4ff3a'; g.beginPath(); g.roundRect(80, 1195, W - 160, 96, 48); g.fill();
   g.fillStyle = '#0d0e12'; g.font = `800 40px ${F}`;
   const t = '¿Me ganas? ' + inviteUrl.replace(/^https?:\/\//, '');
@@ -144,6 +149,7 @@ async function pageHome() {
     $('#my-ms').textContent = t.mine.avg != null ? `${t.mine.avg} ms` : 'sin puntuación';
     show($('#played')); $('#play-btn').textContent = 'Ver mi resultado';
   }
+  if (t.global?.players >= 20) $('#players-today').textContent = `${t.global.players} personas han jugado hoy`;
   if (my.leagues.length) { show($('#my-leagues')); renderLeagueList($('#league-list'), my.leagues); }
   const form = $('#create-form');
   form.nickname.value = store.get('tp_nick') || '';
@@ -287,6 +293,9 @@ async function showResult(t, r) {
   if (r.avg != null) $('#r-avg').textContent = r.avg;
   else { big.classList.add('none'); big.textContent = 'Sin puntuación'; }
   $('#r-verdict').textContent = verdict(r.avg);
+  const gl = r.global || t.global;
+  const glText = globalLine(gl);
+  $('#r-global').textContent = glText;
   $('#r-attempts').replaceChildren(...r.attempts.map((ms, i) =>
     h('li', { class: r.discarded.includes(i) ? 'bad' : null, title: r.discarded.includes(i) ? 'Descartado (<100 ms)' : null }, ms, h('small', {}, r.discarded.includes(i) ? 'no cuenta' : 'ms'))));
   let left = t.nextIn;
@@ -304,11 +313,11 @@ async function showResult(t, r) {
   const league = leagues.find((l) => l.code === last) || leagues[0] || null;
   const inviteUrl = league ? leagueUrl(league.code) : `${location.origin}/reflejos`;
   const text = r.avg != null
-    ? `Hoy he hecho ${r.avg} ms en el reto de reflejos de Tepicas${league?.pos ? ` (${ord(league.pos)} de ${league.played} en «${league.name}»)` : ''}. ¿Me ganas?`
+    ? `Hoy he hecho ${r.avg} ms en el reto de reflejos de Tepicas${league?.pos ? ` (${ord(league.pos)} de ${league.played} en «${league.name}»)` : gl?.beat != null && gl.players >= 10 ? ` (más rápido que el ${gl.beat} % de hoy)` : ''}. ¿Me ganas?`
     : 'Hoy me he quedado sin nota en el reto de reflejos de Tepicas. ¿Lo haces mejor?';
   // la imagen se prepara antes del toque: iOS exige llamar a share() dentro del gesto
   let file = null;
-  drawCard({ ...r, day: r.day || t.day, league, inviteUrl }).then((blob) => { if (blob) file = new File([blob], `tepicas-${t.day}.png`, { type: 'image/png' }); });
+  drawCard({ ...r, day: r.day || t.day, league, inviteUrl, gl }).then((blob) => { if (blob) file = new File([blob], `tepicas-${t.day}.png`, { type: 'image/png' }); });
   $('#share-result').onclick = async () => {
     if (file && isTouch && navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file], text: `${text} ${inviteUrl}` }); track('result_share', league?.code); return; }

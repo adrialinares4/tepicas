@@ -63,9 +63,20 @@ async function today({ db, dev, now, day }) {
   let mine = null;
   if (dev) {
     const r = await db.prepare('SELECT avg_ms, attempts FROM plays WHERE device_id = ? AND day = ?').bind(dev, day).first();
-    if (r) mine = { avg: r.avg_ms, attempts: JSON.parse(r.attempts), ...scoreAttempts(JSON.parse(r.attempts)) };
+    if (r) mine = { attempts: JSON.parse(r.attempts), ...scoreAttempts(JSON.parse(r.attempts)) };
   }
-  return { day, weekStart: weekStart(day), delays: delaysFor(day), nextIn: 86400 - secondsIntoDay(now), mine };
+  const global = await globalStats(db, day, mine?.avg);
+  return { day, weekStart: weekStart(day), delays: delaysFor(day), nextIn: 86400 - secondsIntoDay(now), mine, global };
+}
+
+// Comparación con todos los jugadores del día (sin nombres).
+async function globalStats(db, day, avg) {
+  const r = await db
+    .prepare('SELECT COUNT(*) AS total, MIN(avg_ms) AS best, SUM(avg_ms > ?) AS slower FROM plays WHERE day = ? AND avg_ms IS NOT NULL')
+    .bind(avg ?? 0, day).first();
+  const total = r.total || 0;
+  const beat = avg != null && total > 1 ? Math.round(((r.slower || 0) / (total - 1)) * 100) : null;
+  return { players: total, best: r.best ?? null, beat };
 }
 
 async function play({ db, dev, now, day }, b) {
@@ -83,9 +94,10 @@ async function play({ db, dev, now, day }, b) {
   if (r.meta.changes === 0) {
     const old = await db.prepare('SELECT attempts FROM plays WHERE device_id = ? AND day = ?').bind(dev, b.day).first();
     const oa = JSON.parse(old.attempts);
-    return { day: b.day, attempts: oa, ...scoreAttempts(oa), already: true };
+    const os = scoreAttempts(oa);
+    return { day: b.day, attempts: oa, ...os, already: true, global: await globalStats(db, b.day, os.avg) };
   }
-  return { day: b.day, attempts: a, ...s, already: false };
+  return { day: b.day, attempts: a, ...s, already: false, global: await globalStats(db, b.day, s.avg) };
 }
 
 // ---------- ligas ----------

@@ -95,6 +95,9 @@ body.playing { overflow: hidden; }
 .attempts li { background: #0f1116; border-radius: 10px; padding: 8px 2px; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
 .attempts li small { display: block; color: var(--muted); font-weight: 500; font-size: 11px; }
 .attempts li.bad { text-decoration: line-through; color: #ff6b7d; }
+.global { margin: -6px 0 0; font-weight: 700; color: var(--text); }
+.global:empty { display: none; }
+.hint:empty { display: none; }
 .next { text-align: center; color: var(--muted); margin: 4px 0; }
 .next b { color: var(--text); font-variant-numeric: tabular-nums; }
 .invite-url { word-break: break-all; font-weight: 700; color: var(--text); background: #0f1116; padding: 10px 12px; border-radius: 10px; margin: 0 0 12px; }

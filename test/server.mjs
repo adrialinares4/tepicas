@@ -9,7 +9,7 @@ import { handleApi } from '../src/api.js';
 import { leaguePage } from '../src/pages.js';
 
 const ROOT = fileURLToPath(new URL('../public', import.meta.url));
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.txt': 'text/plain; charset=utf-8' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml' };
 
 // Aplica la misma CSP que public/_headers para detectar violaciones en local.
 let cspCache;

@@ -2,3 +2,5 @@ User-agent: *
 Disallow: /api/
 Disallow: /admin
 Disallow: /l/
+
+Sitemap: https://tepicas.com/sitemap.xml

@@ -192,3 +192,16 @@ test('página de liga con vista previa para WhatsApp', async () => {
   assert.ok(html.includes('content="https://x.pages.dev/og.png"'));
   assert.equal((await leaguePage(new Request('https://x.pages.dev/l/NOPE00'), env, 'NOPE00')).status, 404);
 });
+
+test('comparación global del día (percentil y récord)', async () => {
+  const { call } = setup();
+  const p = (d, ms) => call('POST', '/play', { dev: D(d), body: { day: '2026-11-19', attempts: [ms, ms, ms, ms, ms] } });
+  const first = await p(1, 300);
+  assert.deepEqual(first.data.global, { players: 1, best: 300, beat: null });
+  await p(2, 200); await p(3, 250); await p(4, 350);
+  await call('POST', '/play', { dev: D(5), body: { day: '2026-11-19', attempts: [10, 10, 10, 200, 200] } }); // sin nota: no cuenta
+  const t = await call('GET', '/today', { dev: D(3) });
+  assert.deepEqual(t.data.global, { players: 4, best: 200, beat: 67 }); // gana a 2 de 3
+  const anon = await call('GET', '/today');
+  assert.deepEqual(anon.data.global, { players: 4, best: 200, beat: null });
+});
