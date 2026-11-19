@@ -5,6 +5,6 @@ compatibility_date = "2026-06-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "tepicas"
-database_id = "PEGA_AQUI_EL_ID_DE_D1"
+database_id = "a77b203b-a44a-4f9e-a55c-cf6710278a6f"
 
 # ADMIN_TOKEN se configura como secreto en Cloudflare (no aquí).
