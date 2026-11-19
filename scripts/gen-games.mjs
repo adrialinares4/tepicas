@@ -102,7 +102,7 @@ for (const g of GAMES) {
 ${g.about.map((p) => `    <p>${esc(p)}</p>`).join('\n')}
   </section>
 </main>
-<footer><a href="/privacidad">Privacidad</a> · Solo mayores de 14 años · © 2026 Tepicas</footer>
+<footer><a href="/sobre">Sobre Tepicas</a> · <a href="/contacto">Contacto</a> · <a href="/privacidad">Privacidad</a> · Solo mayores de 14 años · © 2026 Tepicas</footer>
 </body>
 </html>
 `;

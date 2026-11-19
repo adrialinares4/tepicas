@@ -366,6 +366,7 @@ const PAGES = { home: pageHome, liga: pageLeague, reflejos: pageReflejos, privac
   document.querySelectorAll('.js-day').forEach((el) => (el.textContent = dayLabel(madridDay())));
   const page = document.body.dataset.page;
   if (page === 'privacidad') return pagePrivacy();
+  if (page === 'info') return;
   await ageGate();
   const today = madridDay();
   if (store.get('tp_visit') !== today) { store.set('tp_visit', today); track('visit'); }
