@@ -73,6 +73,35 @@ async function shareLink({ title, text, url }) {
   return true;
 }
 
+// ---------- catálogo de juegos ----------
+export const CATALOG = [
+  { slug: 'dianas', title: 'Caza dianas', desc: 'Toca 20 dianas lo más rápido posible', lower: true, fmt: (v) => (v / 1000).toFixed(2).replace('.', ',') + ' s' },
+  { slug: 'secuencia', title: 'Memoria visual', desc: 'Repite la secuencia que se ilumina', fmt: (v) => `nivel ${v}` },
+  { slug: 'calculo', title: 'Cálculo rápido', desc: 'Cuántas operaciones aciertas en 30 s', fmt: (v) => `${v} aciertos` },
+  { slug: 'numeros', title: 'Memoria de números', desc: 'Recuerda números cada vez más largos', fmt: (v) => `${v} cifras` },
+  { slug: 'colores', title: 'Colores locos', desc: 'Toca el color de la tinta, no la palabra', fmt: (v) => `${v} aciertos` },
+];
+export function renderGameGrid(el, exclude) {
+  el.replaceChildren(...CATALOG.filter((g) => g.slug !== exclude).map((g) => {
+    const best = store.get('tp_best_' + g.slug);
+    return h('a', { class: 'game-tile', href: '/juegos/' + g.slug },
+      h('b', {}, g.title), h('small', {}, g.desc), best ? h('span', { class: 'tile-best' }, 'Tu récord: ' + g.fmt(Number(best))) : null);
+  }));
+}
+
+// ---------- páginas vistas (sin cookies; sesión = 30 min de inactividad) ----------
+function trackPageview() {
+  const now = Date.now();
+  let sid = store.get('tp_sid');
+  if (!sid || now - Number(store.get('tp_sid_t') || 0) > 30 * 60 * 1000) {
+    sid = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, '0')).join('');
+    store.set('tp_sid', sid);
+  }
+  store.set('tp_sid_t', String(now));
+  const path = location.pathname.replace(/\/$/, '') || '/';
+  api('/pv', { method: 'POST', body: { sid, path }, keepalive: true }).catch(() => {});
+}
+
 // ---------- puerta de edad (+14) ----------
 function ageGate() {
   if (store.get('tp_age') === '1') return Promise.resolve();
@@ -331,7 +360,8 @@ async function showResult(t, r) {
 function pagePrivacy() { $('#my-id').textContent = DEV; }
 
 // ---------- arranque ----------
-const PAGES = { home: pageHome, liga: pageLeague, reflejos: pageReflejos, privacidad: pagePrivacy };
+const pageGame = async () => (await import('/games.js')).pageGame();
+const PAGES = { home: pageHome, liga: pageLeague, reflejos: pageReflejos, privacidad: pagePrivacy, juego: pageGame };
 (async () => {
   document.querySelectorAll('.js-day').forEach((el) => (el.textContent = dayLabel(madridDay())));
   const page = document.body.dataset.page;
@@ -339,6 +369,8 @@ const PAGES = { home: pageHome, liga: pageLeague, reflejos: pageReflejos, privac
   await ageGate();
   const today = madridDay();
   if (store.get('tp_visit') !== today) { store.set('tp_visit', today); track('visit'); }
+  trackPageview();
+  document.querySelectorAll('.js-games').forEach((el) => renderGameGrid(el, document.body.dataset.game));
   try { await PAGES[page]?.(); }
   catch (e) {
     console.error(e);
@@ -346,3 +378,5 @@ const PAGES = { home: pageHome, liga: pageLeague, reflejos: pageReflejos, privac
     $('#reload').onclick = () => location.reload();
   }
 })();
+
+export { $, show, h, store, api, track, isTouch };

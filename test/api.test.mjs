@@ -205,3 +205,36 @@ test('comparación global del día (percentil y récord)', async () => {
   const anon = await call('GET', '/today');
   assert.deepEqual(anon.data.global, { players: 4, best: 200, beat: null });
 });
+
+test('minijuegos: mejor marca diaria, percentil, límites antitrampas', async () => {
+  const { call } = setup();
+  const s = (d, game, score) => call('POST', '/score', { dev: D(d), body: { game, score } });
+  assert.equal((await s(1, 'nada', 5)).status, 400);
+  assert.equal((await s(1, 'dianas', 1000)).status, 400); // imposible: <2,5 s para 20 dianas
+  assert.equal((await s(1, 'calculo', 99)).status, 400);
+  assert.equal((await s(1, 'calculo', 2.5)).status, 400);
+  assert.deepEqual((await s(1, 'dianas', 9000)).data, { score: 9000, players: 1, record: 9000, beat: null });
+  await s(1, 'dianas', 8000); await s(1, 'dianas', 9500); // se queda la mejor (8000)
+  await s(2, 'dianas', 7000); await s(3, 'dianas', 12000);
+  assert.deepEqual((await s(4, 'dianas', 8500)).data, { score: 8500, players: 4, record: 7000, beat: 33 });
+  await s(1, 'calculo', 20); await s(1, 'calculo', 15);
+  const r = (await s(2, 'calculo', 18)).data;
+  assert.deepEqual(r, { score: 18, players: 2, record: 20, beat: 0 });
+});
+
+test('páginas vistas: páginas por sesión y duración en el panel', async () => {
+  const { call, setNow } = setup('2026-11-19T12:00:00+01:00');
+  const pv = (d, sid, path) => call('POST', '/pv', { dev: D(d), body: { sid, path } });
+  assert.equal((await pv(1, 'bad sid!', '/')).status, 400);
+  assert.equal((await pv(1, 'abcdef12', 'http://x')).status, 400);
+  await pv(1, 'abcdef12', '/'); setNow('2026-11-19T12:01:00+01:00');
+  await pv(1, 'abcdef12', '/juegos/dianas'); setNow('2026-11-19T12:03:00+01:00');
+  await pv(1, 'abcdef12', '/l/ABC123');
+  await pv(2, 'zzzzzzzz', '/');
+  const s = (await call('GET', '/admin/stats', { token: TOKEN })).data;
+  assert.deepEqual(s.sessions, { sessions: 2, pageviews: 4, pagesPerSession: 2, avgSeconds: 90 });
+  assert.deepEqual(s.topPaths[0], { path: '/', n: 2 });
+  assert.ok(s.topPaths.some((p) => p.path === '/l/:code'));
+  const csv = await call('GET', '/admin/csv?kind=sessions', { token: TOKEN });
+  assert.match(csv.text, /day,sessions,pageviews,pages_per_session,avg_seconds\n2026-11-19,2,4,2,90/);
+});

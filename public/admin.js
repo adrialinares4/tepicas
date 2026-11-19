@@ -47,6 +47,13 @@ async function load() {
     kpi('Ligas con 5+ jugadores', fmtPct(g.leagues5.value), `${g.leagues5.big} de ${g.leagues5.leagues} · objetivo ≥${g.leagues5.target} %`, st(g.leagues5)),
     kpi('Jugadores que comparten', fmtPct(g.share.value), `${g.share.sharers} de ${g.share.players} · objetivo ≥${g.share.target} %`, st(g.share)),
   );
+  const se = s.sessions;
+  $('#sess').replaceChildren(
+    kpi('Sesiones', se.sessions), kpi('Páginas vistas', se.pageviews),
+    kpi('Páginas por sesión', se.pagesPerSession ?? '—'), kpi('Duración media', se.avgSeconds != null ? se.avgSeconds + ' s' : '—'),
+  );
+  $('#games').replaceChildren(table(s.games, [['game', 'Juego'], ['players', 'Jugadores'], ['runs', 'Partidas']]));
+  $('#paths').replaceChildren(table(s.topPaths, [['path', 'Página'], ['n', 'Vistas']]));
   const t = s.totals;
   $('#totals').replaceChildren(
     kpi('Visitantes únicos', t.visitors), kpi('Jugadores', t.players), kpi('Partidas', t.plays), kpi('Ligas', t.leagues),

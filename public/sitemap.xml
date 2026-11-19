@@ -2,5 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://tepicas.com/</loc><changefreq>daily</changefreq></url>
   <url><loc>https://tepicas.com/reflejos</loc><changefreq>daily</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/dianas</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/secuencia</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/calculo</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/numeros</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/colores</loc><changefreq>weekly</changefreq></url>
   <url><loc>https://tepicas.com/privacidad</loc><changefreq>yearly</changefreq></url>
 </urlset>

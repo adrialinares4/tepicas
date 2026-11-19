@@ -43,3 +43,27 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_day_type ON events(day, type);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_events_visit ON events(day, device_id) WHERE type = 'visit';
+
+-- Minijuegos libres: mejor marca por dispositivo, juego y día
+CREATE TABLE IF NOT EXISTS scores (
+  device_id  TEXT    NOT NULL,
+  game       TEXT    NOT NULL,
+  day        TEXT    NOT NULL,
+  best       INTEGER NOT NULL,
+  runs       INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (device_id, game, day)
+);
+CREATE INDEX IF NOT EXISTS idx_scores_game_day ON scores(game, day);
+
+-- Páginas vistas (sin cookies): base de páginas/sesión y duración
+CREATE TABLE IF NOT EXISTS pageviews (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  day        TEXT    NOT NULL,
+  device_id  TEXT    NOT NULL,
+  session_id TEXT    NOT NULL,
+  path       TEXT    NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pv_day ON pageviews(day);
+CREATE INDEX IF NOT EXISTS idx_pv_session ON pageviews(session_id);

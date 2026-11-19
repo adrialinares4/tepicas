@@ -3,6 +3,7 @@ import {
   nowMs, scoreAttempts, secondsIntoDay, weekStart,
 } from './lib.js';
 import { isProfane } from './profanity.js';
+import { GAMES } from './games.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const EVENT_TYPES = new Set(['visit', 'invite_open', 'invite_share', 'result_share']);
@@ -44,6 +45,8 @@ export async function handleApi(request, env) {
     if ((m = path.match(/^\/leagues\/([a-z0-9]{6})\/join$/i)) && method === 'POST')
       return json(await joinLeague(ctx, m[1].toUpperCase(), await body(request)));
     if (path === '/me/leagues' && method === 'GET') return json(await myLeagues(ctx));
+    if (path === '/score' && method === 'POST') return json(await score(ctx, await body(request)));
+    if (path === '/pv' && method === 'POST') { await pageview(ctx, await body(request)); return new Response(null, { status: 204 }); }
     if (path === '/event' && method === 'POST') { await event(ctx, await body(request)); return new Response(null, { status: 204 }); }
     if (path.startsWith('/admin/')) {
       checkAdmin(request, env);
@@ -229,6 +232,35 @@ async function myLeagues({ db, dev, day }) {
   };
 }
 
+// ---------- minijuegos libres ----------
+async function score({ db, dev, now, day }, b) {
+  needDevice(dev);
+  const g = GAMES[b.game];
+  if (!g) fail(400, 'bad_game', 'Juego no válido');
+  const v = b.score;
+  if (!Number.isInteger(v) || v < g.min || v > g.max) fail(400, 'bad_score', 'Puntuación no válida');
+  const keep = g.lower ? 'MIN(best, excluded.best)' : 'MAX(best, excluded.best)';
+  await db
+    .prepare(`INSERT INTO scores (device_id, game, day, best, runs, updated_at) VALUES (?, ?, ?, ?, 1, ?)
+              ON CONFLICT (device_id, game, day) DO UPDATE SET best = ${keep}, runs = runs + 1, updated_at = excluded.updated_at`)
+    .bind(dev, b.game, day, v, now).run();
+  const r = await db
+    .prepare(`SELECT COUNT(*) AS total, ${g.lower ? 'MIN' : 'MAX'}(best) AS record, SUM(best ${g.lower ? '>' : '<'} ?) AS worse
+              FROM scores WHERE game = ? AND day = ?`)
+    .bind(v, b.game, day).first();
+  const total = r.total || 0;
+  return { score: v, players: total, record: r.record, beat: total > 1 ? Math.round(((r.worse || 0) / (total - 1)) * 100) : null };
+}
+
+async function pageview({ db, dev, now, day }, b) {
+  needDevice(dev);
+  if (typeof b.path !== 'string' || !/^\/[a-z0-9/_-]{0,60}$/i.test(b.path)) fail(400, 'bad_path', 'Ruta no válida');
+  if (typeof b.sid !== 'string' || !/^[a-z0-9]{8,32}$/i.test(b.sid)) fail(400, 'bad_sid', 'Sesión no válida');
+  const path = b.path.replace(/^\/l\/[a-z0-9]{6}$/i, '/l/:code');
+  await db.prepare('INSERT INTO pageviews (day, device_id, session_id, path, created_at) VALUES (?, ?, ?, ?, ?)')
+    .bind(day, dev, b.sid, path, now).run();
+}
+
 // ---------- medición ----------
 async function event({ db, dev, now, day }, b) {
   needDevice(dev);
@@ -252,8 +284,10 @@ function checkAdmin(request, env) {
 }
 
 const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null);
-const FIRST = 'SELECT device_id, MIN(day) AS fd FROM plays GROUP BY device_id';
-const RETURNED = "EXISTS (SELECT 1 FROM plays p WHERE p.device_id = f.device_id AND p.day = date(f.fd, '+1 day'))";
+// Actividad = jugar el reto o un minijuego (cualquier día cuenta para la vuelta al día 2).
+const ACTIVE = 'SELECT device_id, day FROM plays UNION SELECT device_id, day FROM scores';
+const FIRST = `SELECT device_id, MIN(day) AS fd FROM (${ACTIVE}) GROUP BY device_id`;
+const RETURNED = `EXISTS (SELECT 1 FROM (${ACTIVE}) p WHERE p.device_id = f.device_id AND p.day = date(f.fd, '+1 day'))`;
 
 async function cohorts(db, day) {
   const { results } = await db
@@ -279,7 +313,7 @@ async function daily(db) {
   const q = async (sql) => (await db.prepare(sql).all()).results;
   const [visitors, players, newPlayers, created, joins, evs] = await Promise.all([
     q("SELECT day, COUNT(DISTINCT device_id) AS n FROM events WHERE type = 'visit' GROUP BY day"),
-    q('SELECT day, COUNT(*) AS n FROM plays GROUP BY day'),
+    q(`SELECT day, COUNT(DISTINCT device_id) AS n FROM (${ACTIVE}) GROUP BY day`),
     q(`SELECT fd AS day, COUNT(*) AS n FROM (${FIRST}) GROUP BY fd`),
     q('SELECT day, COUNT(*) AS n FROM leagues GROUP BY day'),
     q("SELECT day, COUNT(*) AS n FROM members WHERE role = 'member' GROUP BY day"),
@@ -299,9 +333,15 @@ async function daily(db) {
 
 async function stats({ db, day }) {
   const one = (sql, ...a) => db.prepare(sql).bind(...a).first();
+  const [sess, topPaths, gamesRows] = await Promise.all([
+    one(`SELECT COUNT(*) AS sessions, SUM(n) AS pageviews, AVG(n) AS pps, AVG(dur) AS dur
+         FROM (SELECT COUNT(*) AS n, (MAX(created_at) - MIN(created_at)) / 1000.0 AS dur FROM pageviews GROUP BY session_id)`),
+    db.prepare('SELECT path, COUNT(*) AS n FROM pageviews GROUP BY path ORDER BY n DESC LIMIT 15').all(),
+    db.prepare('SELECT game, COUNT(DISTINCT device_id) AS players, SUM(runs) AS runs FROM scores GROUP BY game ORDER BY runs DESC').all(),
+  ]);
   const [tot, sharers, evTotals, coh, lgs, days] = await Promise.all([
-    one('SELECT COUNT(DISTINCT device_id) AS players, COUNT(*) AS plays FROM plays'),
-    one("SELECT COUNT(DISTINCT device_id) AS n FROM events WHERE type IN ('result_share', 'invite_share') AND device_id IN (SELECT device_id FROM plays)"),
+    one(`SELECT (SELECT COUNT(DISTINCT device_id) FROM (${ACTIVE})) AS players, (SELECT COUNT(*) FROM plays) AS plays`),
+    one(`SELECT COUNT(DISTINCT device_id) AS n FROM events WHERE type IN ('result_share', 'invite_share') AND device_id IN (SELECT device_id FROM (${ACTIVE}))`),
     db.prepare("SELECT type, COUNT(*) AS n, COUNT(DISTINCT device_id) AS devices FROM events GROUP BY type").all(),
     cohorts(db, day), leaguesTable(db), daily(db),
   ]);
@@ -324,6 +364,11 @@ async function stats({ db, day }) {
       leagues5: { value: pct(big, lgs.length), target: 40, big, leagues: lgs.length },
       share: { value: pct(sharers.n, tot.players), target: 10, sharers: sharers.n, players: tot.players },
     },
+    sessions: {
+      sessions: sess.sessions || 0, pageviews: sess.pageviews || 0,
+      pagesPerSession: sess.pps ? Math.round(sess.pps * 10) / 10 : null, avgSeconds: sess.dur != null ? Math.round(sess.dur) : null,
+    },
+    topPaths: topPaths.results, games: gamesRows.results,
     leagueSizes: sizes, cohorts: coh, daily: days.slice(-60), leagues: lgs,
   };
 }
@@ -346,6 +391,14 @@ async function exportCsv({ db, day }, kind) {
       .prepare('SELECT e.id, e.day, e.type, e.device_id, l.code AS league, e.created_at FROM events e LEFT JOIN leagues l ON l.id = e.league_id ORDER BY e.id')
       .all();
     return toCsv(results.map((r) => ({ ...r, created_at: new Date(r.created_at).toISOString() })), ['id', 'day', 'type', 'device_id', 'league', 'created_at']);
+  }
+  if (kind === 'sessions') {
+    const { results } = await db
+      .prepare(`SELECT day, COUNT(*) AS sessions, SUM(n) AS pageviews, ROUND(AVG(n), 2) AS pages_per_session, ROUND(AVG(dur)) AS avg_seconds
+                FROM (SELECT MIN(day) AS day, session_id, COUNT(*) AS n, (MAX(created_at) - MIN(created_at)) / 1000.0 AS dur FROM pageviews GROUP BY session_id)
+                GROUP BY day ORDER BY day`)
+      .all();
+    return toCsv(results, ['day', 'sessions', 'pageviews', 'pages_per_session', 'avg_seconds']);
   }
   if (kind === 'plays') {
     const { results } = await db.prepare('SELECT device_id, day, avg_ms, valid_count, attempts FROM plays ORDER BY day, created_at').all();
