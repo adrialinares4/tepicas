@@ -7,3 +7,9 @@
 /admin*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.css
+  Cache-Control: public, max-age=0, must-revalidate
