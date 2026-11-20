@@ -59,6 +59,7 @@ for (const g of GAMES) {
 <meta name="theme-color" content="#0d0e12">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4361300293719479" crossorigin="anonymous"></script>
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(g.title)} · Tepicas">

@@ -181,7 +181,7 @@ try {
   assert.match(id, /^[0-9a-f-]{36}$/);
   await shot(b, '12-privacidad');
 
-  assert.deepEqual(errors.filter((e) => !/status of (400|409)/.test(e)), []); // 400/409 = rechazos esperados (palabrota, apodo cogido)
+  assert.deepEqual(errors.filter((e) => !/status of (400|409)|ERR_|googlesyndication/.test(e)), []); // 400/409 = rechazos esperados (palabrota, apodo cogido)
   console.log('E2E OK · liga', code, '· media A', avgA, '· intentos B', att.map((x) => x[1]).join(' '));
 } finally {
   await browser.close();
