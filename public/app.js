@@ -75,6 +75,7 @@ async function shareLink({ title, text, url }) {
 
 // ---------- catálogo de juegos ----------
 export const CATALOG = [
+  { slug: 'antes', title: '¿Qué fue antes?', desc: 'Apps, juegos, pelis e historia: elige cuál es más antiguo', fmt: (v) => `racha de ${v}` },
   { slug: 'dianas', title: 'Caza dianas', desc: 'Toca 20 dianas lo más rápido posible', lower: true, fmt: (v) => (v / 1000).toFixed(2).replace('.', ',') + ' s' },
   { slug: 'secuencia', title: 'Memoria visual', desc: 'Repite la secuencia que se ilumina', fmt: (v) => `nivel ${v}` },
   { slug: 'calculo', title: 'Cálculo rápido', desc: 'Cuántas operaciones aciertas en 30 s', fmt: (v) => `${v} aciertos` },

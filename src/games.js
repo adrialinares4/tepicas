@@ -5,4 +5,5 @@ export const GAMES = {
   calculo: { lower: false, min: 0, max: 60 },        // aciertos en 30 s
   numeros: { lower: false, min: 0, max: 25 },        // cifras recordadas
   colores: { lower: false, min: 0, max: 60 },        // aciertos en 30 s
+  antes: { lower: false, min: 0, max: 300 },         // racha de aciertos
 };

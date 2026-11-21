@@ -8,6 +8,33 @@ const tap = isTouch ? 'pointerdown' : 'click';
 
 // Cada juego recibe el escenario y devuelve una promesa con la puntuación.
 const GAMES = {
+  async antes(stage) {
+    const { ITEMS } = await import('/antes-data.js');
+    stage.className = 'stage';
+    const hud = h('p', { class: 'stage-hud' }, 'Racha: 0');
+    const ask = h('p', { class: 'hint center' }, '¿Qué fue antes?');
+    const cards = h('div', { class: 'vs' });
+    stage.replaceChildren(hud, ask, cards);
+    let streak = 0;
+    const used = new Set();
+    for (;;) {
+      let a, b;
+      do { a = ITEMS[rnd(0, ITEMS.length - 1)]; b = ITEMS[rnd(0, ITEMS.length - 1)]; }
+      while (a[1] === b[1] || used.has(a[0] + b[0]) || used.has(b[0] + a[0]));
+      used.add(a[0] + b[0]);
+      const btns = [a, b].map(([name]) => h('button', { class: 'btn vs-card' }, name));
+      cards.replaceChildren(btns[0], h('span', { class: 'vs-or' }, 'o'), btns[1]);
+      const pick = await new Promise((r) => btns.forEach((bt, i) => bt.addEventListener(tap, (e) => { e.preventDefault(); r(i); }, { once: true })));
+      const pair = [a, b];
+      const right = a[1] < b[1] ? 0 : 1;
+      btns.forEach((bt, i) => { bt.disabled = true; bt.append(h('small', { class: 'vs-year' }, String(pair[i][1]))); bt.classList.add(i === right ? 'ok' : 'bad'); });
+      await sleep(pick === right ? 900 : 1600);
+      if (pick !== right || streak >= 300) return streak;
+      hud.textContent = `Racha: ${++streak}`;
+      if (used.size > 400) used.clear();
+    }
+  },
+
   async dianas(stage) {
     stage.className = 'stage arena';
     const counter = h('p', { class: 'stage-hud' }, '0/20');

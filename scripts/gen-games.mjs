@@ -4,6 +4,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 const GAMES = [
   {
+    slug: 'antes', title: '¿Qué fue antes?', seo: 'Juego de cultura general',
+    lead: 'Dos cosas: una app, un videojuego, una peli o un hecho histórico. Elige cuál apareció antes. ¿Hasta dónde llega tu racha?',
+    about: [
+      '¿Qué fue antes? es un juego de cultura general por rachas: te enseñamos dos cosas, como WhatsApp e Instagram o el Muro de Berlín y la Game Boy, y tienes que adivinar cuál es más antigua. Si aciertas, sigues; al primer fallo, se acaba.',
+      'Mezcla tecnología, videojuegos, cine, series, música, fútbol e historia. Cada respuesta muestra el año, así que también aprendes mientras juegas.',
+    ],
+  },
+  {
     slug: 'dianas', title: 'Caza dianas', seo: 'Test de puntería online',
     lead: 'Toca 20 dianas lo más rápido que puedas. Cuenta el tiempo total.',
     about: [

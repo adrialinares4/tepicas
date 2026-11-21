@@ -162,3 +162,10 @@ th { color: var(--muted); font-weight: 600; }
 .score { font-size: 64px; }
 .shake { animation: shake .25s; }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+.vs { display: flex; flex-direction: column; gap: 10px; margin: auto 0; }
+.vs-card { min-height: 110px; font-size: 21px; flex-direction: column; margin: 0; }
+.vs-card.ok { background: var(--go); color: var(--ink); border-color: var(--go); opacity: 1; }
+.vs-card.bad { background: #3a1d24; border-color: var(--wait); opacity: 1; }
+.vs-year { font-size: 26px; font-weight: 900; }
+.vs-or { text-align: center; color: var(--muted); font-weight: 800; }

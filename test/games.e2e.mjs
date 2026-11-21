@@ -17,7 +17,26 @@ try {
   await p.goto(BASE + '/');
   await p.waitForSelector('.js-games .game-tile');
   assert.equal(await p.locator('#crear').count(), 1);
-  assert.equal(await p.locator('.js-games .game-tile').count(), 5);
+  assert.equal(await p.locator('.js-games .game-tile').count(), 6);
+
+  // ¿Qué fue antes?: 5 aciertos y un fallo
+  await p.goto(BASE + '/juegos/antes');
+  await p.click('#g-start');
+  for (let i = 0; i < 6; i++) {
+    await p.waitForFunction((i) => document.querySelector('.stage-hud')?.textContent === `Racha: ${i}` && document.querySelectorAll('.vs-card:not([disabled])').length === 2, i);
+    const idx = await p.evaluate(async (wrong) => {
+      const { ITEMS } = await import('/antes-data.js');
+      const y = Object.fromEntries(ITEMS);
+      const [a, b] = [...document.querySelectorAll('.vs-card')].map((x) => y[x.textContent]);
+      const right = a < b ? 0 : 1;
+      return wrong ? 1 - right : right;
+    }, i === 5);
+    await p.locator('.vs-card').nth(idx).dispatchEvent('pointerdown');
+  }
+  await p.waitForSelector('#g-end:not(.hidden)');
+  results.antes = await p.textContent('#g-score');
+  assert.equal(results.antes, 'racha de 5');
+  await p.waitForFunction(() => document.querySelector('#g-global').textContent.length > 0);
 
   // Caza dianas
   await p.goto(BASE + '/juegos/dianas');
@@ -88,18 +107,18 @@ try {
   assert.ok(Number(results.colores.split(' ')[0]) >= 9, results.colores);
   await p.screenshot({ path: new URL('../test-results/juego-fin.png', import.meta.url).pathname, fullPage: true });
   assert.match(await p.textContent('#g-global'), /primero en jugar/);
-  assert.match(await p.getAttribute('#g-next', 'href'), /\/juegos\/dianas$/);
+  assert.match(await p.getAttribute('#g-next', 'href'), /\/juegos\/antes$/);
 
   // Récords en la portada y medición
   await p.goto(BASE + '/');
   await p.waitForSelector('.tile-best');
-  assert.equal(await p.locator('.tile-best').count(), 5);
+  assert.equal(await p.locator('.tile-best').count(), 6);
   await p.screenshot({ path: new URL('../test-results/hub.png', import.meta.url).pathname, fullPage: true });
   const pv = env.DB.raw.prepare('SELECT COUNT(*) n, COUNT(DISTINCT session_id) s FROM pageviews').get();
   const sc = env.DB.raw.prepare('SELECT COUNT(*) n FROM scores').get();
   assert.equal(pv.s, 1);
   assert.ok(pv.n >= 7, 'páginas vistas: ' + pv.n);
-  assert.equal(sc.n, 5);
+  assert.equal(sc.n, 6);
   assert.deepEqual(errors.filter((e) => !/ERR_|googlesyndication/.test(e)), []);
   console.log('JUEGOS OK', JSON.stringify(results), 'páginas vistas', pv.n);
 } finally { await browser.close(); server.close(); }
