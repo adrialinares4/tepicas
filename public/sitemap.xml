@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://tepicas.com/</loc><changefreq>daily</changefreq></url>
-  <url><loc>https://tepicas.com/reflejos</loc><changefreq>daily</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/antes</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/dianas</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/secuencia</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/calculo</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/numeros</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/juegos/colores</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://tepicas.com/sobre</loc><changefreq>yearly</changefreq></url>
-  <url><loc>https://tepicas.com/contacto</loc><changefreq>yearly</changefreq></url>
-  <url><loc>https://tepicas.com/privacidad</loc><changefreq>yearly</changefreq></url>
+  <url><loc>https://tepicas.com/</loc><lastmod>2026-11-21</lastmod><changefreq>daily</changefreq></url>
+  <url><loc>https://tepicas.com/reflejos</loc><lastmod>2026-11-21</lastmod><changefreq>daily</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/antes</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/dianas</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/secuencia</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/calculo</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/numeros</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/juegos/colores</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://tepicas.com/sobre</loc><lastmod>2026-11-21</lastmod><changefreq>yearly</changefreq></url>
+  <url><loc>https://tepicas.com/contacto</loc><lastmod>2026-11-21</lastmod><changefreq>yearly</changefreq></url>
+  <url><loc>https://tepicas.com/privacidad</loc><lastmod>2026-11-21</lastmod><changefreq>yearly</changefreq></url>
 </urlset>

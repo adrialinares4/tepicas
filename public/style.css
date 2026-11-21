@@ -114,6 +114,12 @@ footer a { color: var(--muted); }
 .legal h2 { margin-top: 22px; }
 .legal p, .legal li { color: #c9ccd3; }
 .legal code { background: #0f1116; padding: 2px 6px; border-radius: 6px; word-break: break-all; }
+.legal h3 { font-size: 17px; margin: 20px 0 6px; }
+.legal ol, .legal ul { padding-left: 20px; color: #c9ccd3; }
+.legal li { margin: 4px 0; }
+.legal table { margin: 4px 0 8px; }
+.legal th, .legal td { text-align: left; white-space: normal; color: #c9ccd3; }
+.legal th { font-weight: 700; color: var(--text); }
 
 /* Panel */
 .admin main { max-width: 1100px; }
