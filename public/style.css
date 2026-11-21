@@ -112,6 +112,7 @@ footer a { color: var(--muted); }
 
 /* Texto legal */
 .legal h2 { margin-top: 22px; }
+.card.legal > h2:first-child { margin-top: 0; }
 .legal p, .legal li { color: #c9ccd3; }
 .legal code { background: #0f1116; padding: 2px 6px; border-radius: 6px; word-break: break-all; }
 .legal h3 { font-size: 17px; margin: 20px 0 6px; }
