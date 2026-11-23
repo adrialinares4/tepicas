@@ -41,7 +41,9 @@ async function api(path, { method = 'GET', body, keepalive } = {}) {
   if (!res.ok) throw Object.assign(new Error(data?.message || 'Algo ha fallado'), { status: res.status, code: data?.error });
   return data;
 }
-const track = (type, code) => api('/event', { method: 'POST', body: { type, code }, keepalive: true }).catch(() => {});
+// Tráfico propio (navegador con el panel abierto alguna vez o vistas previas *.pages.dev): no se mide.
+const INTERNAL = store.get('tp_internal') === '1' || location.hostname.endsWith('.pages.dev');
+const track = (type, code) => (INTERNAL ? Promise.resolve() : api('/event', { method: 'POST', body: { type, code }, keepalive: true }).catch(() => {}));
 
 // ---------- utilidades ----------
 const madridDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
@@ -91,16 +93,39 @@ export function renderGameGrid(el, exclude) {
 }
 
 // ---------- páginas vistas (sin cookies; sesión = 30 min de inactividad) ----------
+// Origen de la sesión: utm_source > clic de anuncio (TikTok/Google) > web de procedencia > fbclid > liga/directo.
+function trafficSource() {
+  const q = new URLSearchParams(location.search);
+  const clean = (v) => (v || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 40);
+  if (clean(q.get('utm_source'))) return [clean(q.get('utm_source')), clean(q.get('utm_campaign'))];
+  if (q.has('ttclid')) return ['tiktok-ads', ''];
+  if (q.has('gclid')) return ['google-ads', ''];
+  let host = '';
+  try { host = new URL(document.referrer).hostname.replace(/^www\./, ''); } catch {}
+  if (host && !/(^|\.)tepicas\.com$/.test(host)) {
+    const known = [[/(^|\.)google\./, 'google'], [/(^|\.)bing\.com$/, 'bing'], [/(^|\.)duckduckgo\.com$/, 'duckduckgo'],
+      [/tiktok\.com$/, 'tiktok'], [/instagram\.com$/, 'instagram'], [/(facebook\.com|fb\.com)$/, 'facebook'],
+      [/whatsapp\.(com|net)$/, 'whatsapp'], [/^(t\.co|x\.com|twitter\.com)$/, 'x'], [/youtube\.com$/, 'youtube']];
+    return [known.find(([re]) => re.test(host))?.[1] || clean(host) || 'otro', ''];
+  }
+  if (q.has('fbclid')) return ['meta', '']; // Facebook/Instagram sin referer
+  return [location.pathname.startsWith('/l/') ? 'liga' : 'directo', ''];
+}
+
 function trackPageview() {
+  if (INTERNAL) return;
   const now = Date.now();
   let sid = store.get('tp_sid');
-  if (!sid || now - Number(store.get('tp_sid_t') || 0) > 30 * 60 * 1000) {
+  const isNew = !sid || now - Number(store.get('tp_sid_t') || 0) > 30 * 60 * 1000;
+  if (isNew) {
     sid = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, '0')).join('');
     store.set('tp_sid', sid);
   }
   store.set('tp_sid_t', String(now));
   const path = location.pathname.replace(/\/$/, '') || '/';
-  api('/pv', { method: 'POST', body: { sid, path }, keepalive: true }).catch(() => {});
+  const body = { sid, path };
+  if (isNew) [body.src, body.cmp] = trafficSource();
+  api('/pv', { method: 'POST', body, keepalive: true }).catch(() => {});
 }
 
 // ---------- puerta de edad (+14) ----------

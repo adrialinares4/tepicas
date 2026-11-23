@@ -173,6 +173,26 @@ test('eventos y panel: vuelta al día 2, ligas 5+, compartidos, CSV', async () =
   assert.equal((await call('GET', '/admin/csv?kind=x', { token: TOKEN })).status, 400);
 });
 
+test('origen del tráfico: tabla creada sola, primer contacto, págs/usuario y día 2', async () => {
+  const { env, call, setNow } = setup('2026-11-17T10:00:00+01:00');
+  env.DB.raw.exec('DROP TABLE sessions'); // como en producción antes de esta versión
+  const pv = (d, sid, path, src) => call('POST', '/pv', { dev: D(d), body: { sid, path, ...(src ? { src, cmp: 'test1' } : {}) } });
+  assert.equal((await pv(1, 'aaaaaaaa1', '/', 'BAD SRC')).status, 400);
+  assert.equal((await pv(1, 'aaaaaaaa1', '/', 'tiktok-ads')).status, 204);
+  await pv(1, 'aaaaaaaa1', '/juegos/antes');
+  await pv(2, 'bbbbbbbb1', '/reflejos', 'google');
+  await pv(3, 'cccccccc1', '/', 'tiktok-ads');
+  setNow('2026-11-18T10:00:00+01:00');
+  await pv(1, 'aaaaaaaa2', '/', 'directo'); // vuelve el 1 por otra vía: sigue contando como tiktok-ads
+  setNow('2026-11-20T10:00:00+01:00');
+  const s = (await call('GET', '/admin/stats', { token: TOKEN })).data;
+  assert.deepEqual(s.sources.find((r) => r.source === 'tiktok-ads'),
+    { source: 'tiktok-ads', users: 2, pageviews: 4, pages_per_user: 2, eligible_day2: 2, returned_day2: 1, pct_day2: 50 });
+  assert.equal(s.sources.find((r) => r.source === 'google').users, 1);
+  assert.equal(s.sources.some((r) => r.source === 'directo'), false);
+  assert.equal((await call('GET', '/admin/csv?kind=sources', { token: TOKEN })).status, 200);
+});
+
 test('panel sin ADMIN_TOKEN configurado → 503', async () => {
   const { env, call } = setup();
   env.ADMIN_TOKEN = '';

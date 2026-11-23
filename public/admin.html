@@ -29,6 +29,12 @@
       <div class="kpis" id="gate"></div>
     </section>
     <section class="card"><h2>Sesiones (base de ingresos por anuncios)</h2><div class="kpis" id="sess"></div></section>
+    <section class="card">
+      <h2>Por origen del usuario</h2>
+      <p class="sub">Primer contacto de cada usuario. «Ingreso por usuario» = páginas por usuario × RPM ÷ 1.000: es el CPC máximo que se puede pagar sin perder dinero. Este navegador queda excluido de las estadísticas.</p>
+      <form class="form" id="rpm-form"><label>RPM de página supuesto (€)<input name="rpm" type="number" step="0.1" min="0" inputmode="decimal"></label></form>
+      <div class="tbl-wrap" id="sources"></div>
+    </section>
     <section class="card"><h2>Juegos libres</h2><div class="tbl-wrap" id="games"></div></section>
     <section class="card"><h2>Páginas más vistas</h2><div class="tbl-wrap" id="paths"></div></section>
     <section class="card"><h2>Totales</h2><div class="kpis" id="totals"></div></section>
@@ -42,6 +48,7 @@
         <button class="btn" data-csv="daily">Diario</button>
         <button class="btn" data-csv="sessions">Sesiones</button>
         <button class="btn" data-csv="cohorts">Cohortes</button>
+        <button class="btn" data-csv="sources">Orígenes</button>
         <button class="btn" data-csv="leagues">Ligas</button>
         <button class="btn" data-csv="plays">Partidas</button>
         <button class="btn" data-csv="events">Eventos</button>

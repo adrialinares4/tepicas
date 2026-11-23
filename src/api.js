@@ -28,6 +28,20 @@ async function body(request) {
 }
 const needDevice = (dev) => dev || fail(400, 'no_device', 'Falta el ID de dispositivo');
 
+// Tablas añadidas después del primer despliegue: se crean solas en D1 (idempotente, una vez por instancia).
+const schemaReady = new WeakMap();
+function ensureSchema(db) {
+  if (!schemaReady.has(db)) {
+    schemaReady.set(db, db.batch([
+      db.prepare(`CREATE TABLE IF NOT EXISTS sessions (session_id TEXT PRIMARY KEY, device_id TEXT NOT NULL, day TEXT NOT NULL,
+        source TEXT NOT NULL, campaign TEXT NOT NULL DEFAULT '', landing TEXT NOT NULL, created_at INTEGER NOT NULL)`),
+      db.prepare('CREATE INDEX IF NOT EXISTS idx_sessions_device ON sessions(device_id, created_at)'),
+      db.prepare('CREATE INDEX IF NOT EXISTS idx_pv_device ON pageviews(device_id, day)'),
+    ]).catch((e) => { schemaReady.delete(db); throw e; }));
+  }
+  return schemaReady.get(db);
+}
+
 export async function handleApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api/, '').replace(/\/$/, '') || '/';
@@ -256,9 +270,35 @@ async function pageview({ db, dev, now, day }, b) {
   needDevice(dev);
   if (typeof b.path !== 'string' || !/^\/[a-z0-9/_-]{0,60}$/i.test(b.path)) fail(400, 'bad_path', 'Ruta no válida');
   if (typeof b.sid !== 'string' || !/^[a-z0-9]{8,32}$/i.test(b.sid)) fail(400, 'bad_sid', 'Sesión no válida');
+  if (b.src != null && (typeof b.src !== 'string' || !/^[a-z0-9._-]{1,40}$/.test(b.src))) fail(400, 'bad_src', 'Origen no válido');
   const path = b.path.replace(/^\/l\/[a-z0-9]{6}$/i, '/l/:code');
   await db.prepare('INSERT INTO pageviews (day, device_id, session_id, path, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(day, dev, b.sid, path, now).run();
+  if (b.src != null) { // solo en la primera página de la sesión
+    const cmp = typeof b.cmp === 'string' && /^[a-z0-9._-]{0,40}$/.test(b.cmp) ? b.cmp : '';
+    await ensureSchema(db);
+    await db.prepare('INSERT OR IGNORE INTO sessions (session_id, device_id, day, source, campaign, landing, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(b.sid, dev, day, b.src, cmp, path, now).run();
+  }
+}
+
+// Por origen del primer contacto: usuarios, páginas por usuario y vuelta al día 2 (cualquier visita).
+async function sourcesTable(db, day) {
+  await ensureSchema(db);
+  const closed = addDays(day, -1);
+  const { results } = await db
+    .prepare(`SELECT f.source, COUNT(*) AS users,
+                SUM((SELECT COUNT(*) FROM pageviews p WHERE p.device_id = f.device_id)) AS pageviews,
+                SUM(f.day < ?) AS eligible,
+                SUM(f.day < ? AND EXISTS (SELECT 1 FROM pageviews p WHERE p.device_id = f.device_id AND p.day = date(f.day, '+1 day'))) AS returned_day2
+              FROM (SELECT device_id, source, day, MIN(created_at) AS t FROM sessions GROUP BY device_id) f
+              GROUP BY f.source ORDER BY users DESC`)
+    .bind(closed, closed).all();
+  return results.map((r) => ({
+    source: r.source, users: r.users, pageviews: r.pageviews ?? 0,
+    pages_per_user: r.users ? Math.round(((r.pageviews ?? 0) / r.users) * 10) / 10 : null,
+    eligible_day2: r.eligible ?? 0, returned_day2: r.returned_day2 ?? 0, pct_day2: pct(r.returned_day2 ?? 0, r.eligible ?? 0),
+  }));
 }
 
 // ---------- medición ----------
@@ -345,6 +385,7 @@ async function stats({ db, day }) {
     db.prepare("SELECT type, COUNT(*) AS n, COUNT(DISTINCT device_id) AS devices FROM events GROUP BY type").all(),
     cohorts(db, day), leaguesTable(db), daily(db),
   ]);
+  const sources = await sourcesTable(db, day);
   const closed = coh.filter((c) => c.status === 'cerrada');
   const eligible = closed.reduce((a, c) => a + c.new_players, 0);
   const returned = closed.reduce((a, c) => a + c.returned_day2, 0);
@@ -369,7 +410,7 @@ async function stats({ db, day }) {
       pagesPerSession: sess.pps ? Math.round(sess.pps * 10) / 10 : null, avgSeconds: sess.dur != null ? Math.round(sess.dur) : null,
     },
     topPaths: topPaths.results, games: gamesRows.results,
-    leagueSizes: sizes, cohorts: coh, daily: days.slice(-60), leagues: lgs,
+    leagueSizes: sizes, cohorts: coh, daily: days.slice(-60), leagues: lgs, sources,
   };
 }
 
@@ -386,6 +427,7 @@ async function exportCsv({ db, day }, kind) {
   if (kind === 'daily') return toCsv(await daily(db), ['day', 'visitors', 'players', 'new_players', 'leagues_created', 'joins', 'invite_shares', 'invite_opens', 'result_shares']);
   if (kind === 'cohorts') return toCsv(await cohorts(db, day), ['day', 'new_players', 'returned_day2', 'pct_day2', 'status']);
   if (kind === 'leagues') return toCsv(await leaguesTable(db), ['code', 'name', 'created_day', 'members', 'members_played']);
+  if (kind === 'sources') return toCsv(await sourcesTable(db, day), ['source', 'users', 'pageviews', 'pages_per_user', 'eligible_day2', 'returned_day2', 'pct_day2']);
   if (kind === 'events') {
     const { results } = await db
       .prepare('SELECT e.id, e.day, e.type, e.device_id, l.code AS league, e.created_at FROM events e LEFT JOIN leagues l ON l.id = e.league_id ORDER BY e.id')

@@ -52,6 +52,22 @@ async function load() {
     kpi('Sesiones', se.sessions), kpi('Páginas vistas', se.pageviews),
     kpi('Páginas por sesión', se.pagesPerSession ?? '—'), kpi('Duración media', se.avgSeconds != null ? se.avgSeconds + ' s' : '—'),
   );
+  const rpmInput = $('#rpm-form').rpm;
+  const renderSources = () => {
+    const rpm = Number(rpmInput.value) || 0;
+    localStorage.setItem('tp_rpm', String(rpm));
+    const eur = (v) => (v == null ? '—' : v.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' €');
+    $('#sources').replaceChildren(table(s.sources, [
+      ['source', 'Origen'], ['users', 'Usuarios'], ['pages_per_user', 'Págs/usuario'],
+      ['pct_day2', 'Vuelve día 2', (v, r) => `${fmtPct(v)} (${r.returned_day2}/${r.eligible_day2})`],
+      ['pages_per_user', 'Ingreso por usuario', (v) => eur(v == null ? null : (v * rpm) / 1000)],
+    ]));
+  };
+  rpmInput.value = localStorage.getItem('tp_rpm') || '2';
+  rpmInput.oninput = renderSources;
+  $('#rpm-form').onsubmit = (e) => e.preventDefault();
+  renderSources();
+  localStorage.setItem('tp_internal', '1'); // quien abre el panel no cuenta en las estadísticas
   $('#games').replaceChildren(table(s.games, [['game', 'Juego'], ['players', 'Jugadores'], ['runs', 'Partidas']]));
   $('#paths').replaceChildren(table(s.topPaths, [['path', 'Página'], ['n', 'Vistas']]));
   const t = s.totals;

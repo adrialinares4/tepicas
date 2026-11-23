@@ -67,3 +67,17 @@ CREATE TABLE IF NOT EXISTS pageviews (
 );
 CREATE INDEX IF NOT EXISTS idx_pv_day ON pageviews(day);
 CREATE INDEX IF NOT EXISTS idx_pv_session ON pageviews(session_id);
+
+CREATE INDEX IF NOT EXISTS idx_pv_device ON pageviews(device_id, day);
+
+-- Origen de cada sesión (primera página): utm_source, referer o directo
+CREATE TABLE IF NOT EXISTS sessions (
+  session_id TEXT    PRIMARY KEY,
+  device_id  TEXT    NOT NULL,
+  day        TEXT    NOT NULL,
+  source     TEXT    NOT NULL,
+  campaign   TEXT    NOT NULL DEFAULT '',
+  landing    TEXT    NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_device ON sessions(device_id, created_at);
